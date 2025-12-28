@@ -8,9 +8,9 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  nome      String
+  name      String
   email     String   @unique
-  senha     String
+  password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
+} 
