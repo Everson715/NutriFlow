@@ -1,23 +1,40 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StringValue } from 'ms';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AUTH_CONSTANTS } from '../common/constants/auth.constants';
 
-const jwtExpiresIn: StringValue | number =
-  (process.env.JWT_EXPIRES_IN as StringValue) ??
-  AUTH_CONSTANTS.JWT_EXPIRES_IN;
-
 @Module({
   imports: [
     PrismaModule,
-    JwtModule.register({
+
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
       global: true,
-      secret: process.env.JWT_SECRET as string,
-      signOptions: {
-        expiresIn: jwtExpiresIn,
+      useFactory: (configService: ConfigService) => {
+        const expiresInEnv = configService.get('JWT_EXPIRES_IN');
+
+        let expiresIn: StringValue | number;
+
+        if (typeof expiresInEnv === 'number') {
+          expiresIn = expiresInEnv;
+        } else if (typeof expiresInEnv === 'string') {
+          expiresIn = expiresInEnv as StringValue;
+        } else {
+          expiresIn = AUTH_CONSTANTS.JWT_EXPIRES_IN;
+        }
+
+        return {
+          secret: configService.get<string>('JWT_SECRET'),
+          signOptions: {
+            expiresIn,
+          },
+        };
       },
     }),
   ],
