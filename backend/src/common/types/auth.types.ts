@@ -1,18 +1,14 @@
-/**
- * Tipos relacionados à autenticação
- */
-
-export interface RegisterResponse {
+export type RegisterResponse = {
   id: string;
   name: string;
   email: string;
-}
+};
 
-export interface LoginResponse {
+export type LoginResponse = {
   access_token: string;
-}
+};
 
-export interface JwtPayload {
+export type JwtPayload = {
   sub: string;
   email: string;
-}
+};
