@@ -3,6 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   Logger,
+  BadRequestException
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
@@ -19,45 +20,40 @@ import {
 } from '../common/types/auth.types';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UserRepository } from '../users/user.repository';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async register(data: RegisterDto): Promise<RegisterResponse> {
-    const { name, email, password } = data;
+    const { name, email, password, confirmPassword } = data;
+
+    if (password !== confirmPassword) {
+      throw new BadRequestException('As senhas não coincidem');
+    }
+
+    const userExists = await this.userRepository.findByEmail(email);
+    if (userExists) {
+      throw new ConflictException(
+        AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS,
+      );
+    }
 
     try {
       const hashedPassword = await this.hashPassword(password);
 
-      const user = await this.prisma.user.create({
-        data: {
-          name,
-          email,
-          password: hashedPassword,
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
+      return await this.userRepository.create({
+        name,
+        email,
+        password: hashedPassword,
       });
-
-      return user;
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException(
-          AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS,
-        );
-      }
       this.logger.error('Erro ao registrar usuário', error as Error);
       throw error;
     }
@@ -66,7 +62,7 @@ export class AuthService {
   async login(data: LoginDto): Promise<LoginResponse> {
     const { email, password } = data;
 
-    const user = await this.findUserByEmailWithPassword(email);
+    const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
       throw new UnauthorizedException(
@@ -90,38 +86,9 @@ export class AuthService {
       email: user.email,
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
-
     return {
-      access_token: accessToken,
+      access_token: await this.jwtService.signAsync(payload),
     };
-  }
-
-  private async findUserByEmail(
-    email: string,
-    includePassword = false,
-  ): Promise<{
-    id: string;
-    name: string;
-    email: string;
-    password?: string;
-  } | null> {
-    return this.prisma.user.findUnique({
-      where: { email },
-      select: includePassword
-        ? { id: true, name: true, email: true, password: true }
-        : { id: true, name: true, email: true },
-    });
-  }
-
-  private async findUserByEmailWithPassword(
-    email: string,
-  ): Promise<{ id: string; email: string; password: string } | null> {
-    return this.findUserByEmail(email, true) as Promise<{
-      id: string;
-      email: string;
-      password: string;
-    } | null>;
   }
 
   private async hashPassword(password: string): Promise<string> {
