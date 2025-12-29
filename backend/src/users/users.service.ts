@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from './user.repository';
 
 /**
  * Serviço para gerenciamento de usuários
@@ -7,5 +7,5 @@ import { PrismaService } from '../prisma/prisma.service';
  */
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly userRepository: UserRepository) {}
 }

@@ -1,41 +1,36 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from './user.repository';
 
 describe('UsersService', () => {
   let service: UsersService;
-  let prismaService: PrismaService;
+  let userRepository: UserRepository;
 
-  const mockPrismaService = {
-    user: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-  };
+  const mockUserRepository = {
+    findByEmail: jest.fn(),
+    create: jest.fn(),
+  } as unknown as UserRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
-          provide: PrismaService,
-          useValue: mockPrismaService,
+          provide: UserRepository,
+          useValue: mockUserRepository,
         },
       ],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    prismaService = module.get<PrismaService>(PrismaService);
+    userRepository = module.get<UserRepository>(UserRepository);
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  it('should have PrismaService injected', () => {
-    expect(prismaService).toBeDefined();
+  it('should have UserRepository injected', () => {
+    expect(userRepository).toBeDefined();
   });
 });

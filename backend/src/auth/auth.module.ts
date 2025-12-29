@@ -4,13 +4,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { StringValue } from 'ms';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { PrismaModule } from '../prisma/prisma.module';
-import { UserRepository } from '../users/user.repository';
+import { JwtStrategy } from './jwt-strategy';
+import { UsersModule } from '../users/users.module';
 import { AUTH_CONSTANTS } from '../common/constants/auth.constants';
 
 @Module({
   imports: [
-    PrismaModule,
+    UsersModule,
     ConfigModule,
 
     JwtModule.registerAsync({
@@ -39,7 +39,7 @@ import { AUTH_CONSTANTS } from '../common/constants/auth.constants';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserRepository],
+  providers: [AuthService, JwtStrategy],
   exports: [JwtModule],
 })
 export class AuthModule {}
