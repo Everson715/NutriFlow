@@ -258,5 +258,3 @@ Projeto de caráter acadêmico e experimental, desenvolvido como base para evolu
 
 **NutriFlow Backend**
 API desenvolvida com foco em qualidade técnica, clareza arquitetural e escalabilidade.
-
-```
