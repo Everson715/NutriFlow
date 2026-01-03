@@ -18,10 +18,10 @@ export class PrismaService
   constructor() {
     const pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-    })
+    });
     super({
-      adapter: new PrismaPg(pool)
-    }); 
+      adapter: new PrismaPg(pool),
+    });
   }
 
   async onModuleInit(): Promise<void> {

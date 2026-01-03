@@ -1,4 +1,4 @@
-import { StringValue } from "ms";
+import { StringValue } from 'ms';
 export const AUTH_CONSTANTS = {
   SALT_ROUNDS: 10,
   JWT_EXPIRES_IN: '1d' as StringValue,

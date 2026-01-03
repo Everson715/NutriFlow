@@ -3,7 +3,7 @@ import {
   ConflictException,
   UnauthorizedException,
   Logger,
-  BadRequestException
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
@@ -40,9 +40,7 @@ export class AuthService {
 
     const userExists = await this.userRepository.findByEmail(email);
     if (userExists) {
-      throw new ConflictException(
-        AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS,
-      );
+      throw new ConflictException(AUTH_ERROR_MESSAGES.USER_ALREADY_EXISTS);
     }
 
     try {
@@ -65,9 +63,7 @@ export class AuthService {
     const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
-      throw new UnauthorizedException(
-        AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS,
-      );
+      throw new UnauthorizedException(AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     const isPasswordValid = await this.validatePassword(
@@ -76,9 +72,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException(
-        AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS,
-      );
+      throw new UnauthorizedException(AUTH_ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
 
     const payload: JwtPayload = {

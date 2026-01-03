@@ -16,16 +16,17 @@ import { AUTH_CONSTANTS } from '../common/constants/auth.constants';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const expiresInEnv = configService.get<string | number | undefined>('JWT_EXPIRES_IN');
+        const expiresInEnv = configService.get<string | number | undefined>(
+          'JWT_EXPIRES_IN',
+        );
 
         let expiresIn: number | StringValue;
 
-        if (typeof expiresInEnv === 'number'){
+        if (typeof expiresInEnv === 'number') {
           expiresIn = expiresInEnv;
-        }else if (typeof expiresInEnv === 'string'){
+        } else if (typeof expiresInEnv === 'string') {
           expiresIn = expiresInEnv as StringValue;
-
-        }else{
+        } else {
           expiresIn = AUTH_CONSTANTS.JWT_EXPIRES_IN;
         }
 
