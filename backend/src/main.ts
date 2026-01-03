@@ -2,7 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
-const DEFAULT_PORT = 3000;
+const DEFAULT_PORT = 5000;
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
