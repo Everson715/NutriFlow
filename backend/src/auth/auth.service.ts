@@ -6,18 +6,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../prisma/prisma.service';
+
 import {
   AUTH_CONSTANTS,
   AUTH_ERROR_MESSAGES,
 } from '../common/constants/auth.constants';
 import {
-  LoginResponse,
   RegisterResponse,
   JwtPayload,
 } from '../common/types/auth.types';
+
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UserRepository } from '../users/user.repository';
@@ -57,7 +56,7 @@ export class AuthService {
     }
   }
 
-  async login(data: LoginDto): Promise<LoginResponse> {
+  async login(data: LoginDto): Promise<{ accessToken: string }> {
     const { email, password } = data;
 
     const user = await this.userRepository.findByEmail(email);
@@ -81,7 +80,7 @@ export class AuthService {
     };
 
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      accessToken: await this.jwtService.signAsync(payload),
     };
   }
 

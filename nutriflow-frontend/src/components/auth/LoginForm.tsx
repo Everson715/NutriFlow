@@ -29,8 +29,6 @@ export function LoginForm() {
 
             const data = await loginUser(payload);
 
-            localStorage.setItem("access_token", data.access_token);
-
             router.push("/dashboard");
         }catch (err: any) {
             setError(err.message || "Login failed. Please try again.");
