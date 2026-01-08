@@ -51,4 +51,13 @@ export class AuthController {
   validate(@CurrentUser() user: JwtPayload) {
     return user;
   }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+  }
 }
