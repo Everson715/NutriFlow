@@ -2,11 +2,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/services/auth.service";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 export function LoginForm() {
     const router = useRouter();
+    const { validateSession } = useAuth();
 
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -27,8 +29,12 @@ export function LoginForm() {
         try{
             setLoading(true);
 
-            const data = await loginUser(payload);
+            await loginUser(payload);
 
+            // Validate session after successful login to update AuthContext with user data
+            await validateSession();
+
+            // Redirect to dashboard after successful login and session validation
             router.push("/dashboard");
         }catch (err: any) {
             setError(err.message || "Login failed. Please try again.");
