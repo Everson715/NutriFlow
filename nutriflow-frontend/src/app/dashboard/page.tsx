@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedPage } from "@/components/auth/ProtectedPage";
 
 export default function DashboardPage() {
-  const { user, isLoading, error, logout } = useAuth();
+  const { user, error, logout } = useAuth();
 
   // 1. Tratamento de Erro de Rede (UX)
   if (error && error.type === "network") {
@@ -34,7 +34,7 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-3xl font-bold">Dashboard</h1>
               {/* O 'user' aqui é garantido pelo ProtectedPage */}
-              <p className="text-gray-600 mt-1">Bem-vindo, {user?.email}</p>
+              <p className="text-gray-600 mt-1">Bem-vindo, {user!.email}</p>
             </div>
             
             <button
