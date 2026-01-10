@@ -1,63 +1,59 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { ProtectedPage } from "@/components/auth/ProtectedPage";
 
 export default function DashboardPage() {
   const { user, isLoading, error, logout } = useAuth();
 
-  // Prevent rendering before auth state is resolved
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg">Loading...</p>
-          <p className="text-sm text-gray-500 mt-2">Validating session...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if there's a network error (but user might still be authenticated)
+  // 1. Tratamento de Erro de Rede (UX)
   if (error && error.type === "network") {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-lg text-yellow-600">Connection Warning</p>
+          <p className="text-lg text-yellow-600 font-semibold">Aviso de Conexão</p>
           <p className="text-sm text-gray-600">{error.message}</p>
-          {user && (
-            <div className="mt-4">
-              <p className="text-sm text-gray-500">
-                You are logged in as: {user.email}
-              </p>
-            </div>
-          )}
+          <button 
+            onClick={() => window.location.reload()} 
+            className="text-blue-500 underline text-sm"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
   }
 
-  // If no user and not loading, middleware should have redirected
-  // But handle this case gracefully anyway
-  if (!user) {
-    return null; // Middleware will redirect
-  }
-
+  // 2. Encapsulamos todo o retorno no ProtectedPage
+  // Isso garante que a lógica de redirecionamento e o loading centralizado funcionem.
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-gray-600 mt-1">Welcome back, {user.email}</p>
+    <ProtectedPage>
+      <div className="min-h-screen p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-between items-center mb-8 border-b pb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Dashboard</h1>
+              {/* O 'user' aqui é garantido pelo ProtectedPage */}
+              <p className="text-gray-600 mt-1">Bem-vindo, {user?.email}</p>
+            </div>
+            
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors shadow-sm"
+            >
+              Logout
+            </button>
           </div>
-          <button
-            onClick={logout}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Logout
-          </button>
+
+          <main>
+            {/* Conteúdo Real do Dashboard */}
+            <div className="bg-white p-6 rounded-lg border shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">Seus Dados</h2>
+              <p className="text-gray-700">O conteúdo protegido aparece aqui.</p>
+            </div>
+          </main>
         </div>
       </div>
-    </div>
+    </ProtectedPage>
   );
 }
