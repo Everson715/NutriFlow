@@ -2,17 +2,29 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { ProtectedPage } from "@/components/auth/ProtectedPage";
+import { useDashboard } from "@/hooks/useDashboard";
 
 export default function DashboardPage() {
-  const { user, error, logout } = useAuth();
+  const { user, error: authError, logout } = useAuth();
+  const { data, isLoading, error: dashboardError } = useDashboard();
 
-  // 1. Tratamento de Erro de Rede (UX)
-  if (error && error.type === "network") {
+  // 1. Tratamento de Estados Iniciais (Loading e Erro Crítico)
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="animate-pulse">Carregando dados...</p>
+      </div>
+    );
+  }
+
+  // Tratamento de Erro de Rede ou Geral
+  const error = dashboardError || authError;
+  if (error) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-lg text-yellow-600 font-semibold">Aviso de Conexão</p>
-          <p className="text-sm text-gray-600">{error.message}</p>
+          <p className="text-lg text-yellow-600 font-semibold">Erro ao carregar informações</p>
+          <p className="text-sm text-gray-600">{error.message || "Erro desconhecido"}</p>
           <button 
             onClick={() => window.location.reload()} 
             className="text-blue-500 underline text-sm"
@@ -24,8 +36,7 @@ export default function DashboardPage() {
     );
   }
 
-  // 2. Encapsulamos todo o retorno no ProtectedPage
-  // Isso garante que a lógica de redirecionamento e o loading centralizado funcionem.
+  // 2. Renderização Principal
   return (
     <ProtectedPage>
       <div className="min-h-screen p-8">
@@ -33,8 +44,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center mb-8 border-b pb-6">
             <div>
               <h1 className="text-3xl font-bold">Dashboard</h1>
-              {/* O 'user' aqui é garantido pelo ProtectedPage */}
-              <p className="text-gray-600 mt-1">Bem-vindo, {user!.email}</p>
+              <p className="text-gray-600 mt-1">Bem-vindo, {user?.email}</p>
             </div>
             
             <button
@@ -46,10 +56,21 @@ export default function DashboardPage() {
           </div>
 
           <main>
-            {/* Conteúdo Real do Dashboard */}
             <div className="bg-white p-6 rounded-lg border shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Seus Dados</h2>
-              <p className="text-gray-700">O conteúdo protegido aparece aqui.</p>
+              <h2 className="text-xl font-semibold mb-4">Seus Dados de Hoje</h2>
+              
+              {/* Agora os dados são renderizados com segurança dentro do JSX */}
+              <div className="space-y-2">
+                <p className="text-gray-700">
+                  <span className="font-medium">Refeições hoje:</span> {data?.stats?.mealsToday ?? 0}
+                </p>
+                <p className="text-gray-700">
+                  <span className="font-medium">Calorias consumidas:</span> {data?.stats?.caloriesConsumed ?? 0} kcal
+                </p>
+              </div>
+
+              <hr className="my-6" />
+              <p className="text-gray-500 text-sm">O conteúdo protegido aparece aqui.</p>
             </div>
           </main>
         </div>
