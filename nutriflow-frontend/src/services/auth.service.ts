@@ -24,3 +24,9 @@ export async function loginUser(payload: {
   return response.json();
 }
 
+export async function logoutUser() : Promise<void> {
+  await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+}

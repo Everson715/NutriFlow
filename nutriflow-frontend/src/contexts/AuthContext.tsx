@@ -176,7 +176,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       setError(null);
-      
+      setIsLoading(true);
+
       // Attempt to call logout endpoint to clear server-side session
       await apiCall("/auth/logout", {
         method: "POST",
@@ -197,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Always clear user state and redirect, regardless of API call success
       setUser(null);
       setError(null);
+      setIsLoading(false);
       
       // Use replace to avoid back button issues
       router.replace("/login");
