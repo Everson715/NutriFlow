@@ -14,4 +14,16 @@ model User {
   name      String
   password  String
   isActive  Boolean  @default(true)
+  meals     Meal[]
+}
+
+model Meal{
+  id        String    @id @default(uuid())
+  name      String
+  calories  Int
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+
+  createdAt DateTime  @default(now())
 }
