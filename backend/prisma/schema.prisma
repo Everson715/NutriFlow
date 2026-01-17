@@ -6,24 +6,112 @@ datasource db {
   provider = "postgresql"
 }
 
+/*
+  =========================
+  ENUMS
+  =========================
+*/
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum ActivityLevel {
+  SEDENTARY
+  LIGHT
+  MODERATE
+  ACTIVE
+  VERY_ACTIVE
+}
+
+enum NutritionObjective {
+  CUTTING
+  MAINTENANCE
+  BULKING
+}
+
+/*
+  =========================
+  USER (IDENTIDADE / AUTH)
+  =========================
+*/
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+  password  String
+  name      String
+  isActive  Boolean  @default(true)
+
+  profile   UserProfile?
+  goals     NutritionGoal[]
+  meals     Meal[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  name      String
-  password  String
-  isActive  Boolean  @default(true)
-  meals     Meal[]
 }
 
-model Meal{
-  id        String    @id @default(uuid())
+/*
+  =========================
+  USER PROFILE (DADOS FÍSICOS)
+  =========================
+*/
+
+model UserProfile {
+  id             String        @id @default(uuid())
+  userId         String        @unique
+  sex            Sex
+  age            Int
+  heightCm       Int
+  weightKg       Float
+  activityLevel  ActivityLevel
+
+  user           User          @relation(fields: [userId], references: [id])
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+/*
+  =========================
+  NUTRITION GOALS (METAS)
+  =========================
+*/
+
+model NutritionGoal {
+  id           String              @id @default(uuid())
+  userId       String
+
+  calories     Int
+  proteinGrams Int
+  carbsGrams   Int
+  fatGrams     Int
+
+  objective    NutritionObjective
+  isActive     Boolean             @default(true)
+
+  startedAt    DateTime            @default(now())
+  endedAt      DateTime?
+
+  user         User                @relation(fields: [userId], references: [id])
+
+  @@index([userId, isActive])
+}
+
+/*
+  =========================
+  MEALS (REFEIÇÕES)
+  =========================
+*/
+
+model Meal {
+  id        String   @id @default(uuid())
   name      String
   calories  Int
 
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 }
