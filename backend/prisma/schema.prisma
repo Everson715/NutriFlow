@@ -106,12 +106,48 @@ model NutritionGoal {
 */
 
 model Meal {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
-  calories  Int
+
+  calories  Int        // DERIVADO (cache)
+  protein   Int
+  carbs     Int
+  fat       Int
 
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
+
+  items     MealFood[]
+
+  createdAt DateTime   @default(now())
+}
+
+
+model Food {
+  id            String   @id @default(uuid())
+  name          String
+  calories      Int
+  proteinGrams  Int
+  carbsGrams    Int
+  fatGrams      Int
+
+  mealFoods     MealFood[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model MealFood {
+  id        String   @id @default(uuid())
+
+  mealId    String
+  foodId    String
+  quantity  Float    // unidade definida pelo domínio (ex: gramas)
+
+  meal      Meal     @relation(fields: [mealId], references: [id])
+  food      Food     @relation(fields: [foodId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@unique([mealId, foodId])
 }

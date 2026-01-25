@@ -15,9 +15,10 @@ type User = {
   email: string;
 };
 
+// 1. Adicionado "server-error" e "unavailable" ao tipo
 type AuthError = {
   message: string;
-  type: "unauthorized" | "forbidden" | "network" | "unknown";
+  type: "unauthorized" | "forbidden" | "network" | "server-error" | "unavailable" | "unknown";
 } | null;
 
 type AuthContextType = {
@@ -31,10 +32,6 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * Helper function to make authenticated API calls with proper error handling
- * Distinguishes between 401 (unauthorized), 403 (forbidden), network errors, and other errors
- */
 async function apiCall<T>(
   url: string,
   options: RequestInit = {},
@@ -55,37 +52,51 @@ async function apiCall<T>(
       },
     });
 
-    // Handle HTTP errors with specific status codes
+    // --- TRATAMENTO DE STATUS ESPECÍFICOS ---
+
     if (response.status === 401) {
-      const error = new Error("Session expired. Please log in again.");
+      const error = new Error("Sessão expirada. Por favor, faça login novamente.");
       (error as any).status = 401;
       (error as any).type = "unauthorized";
       throw error;
     }
 
     if (response.status === 403) {
-      const error = new Error("Access forbidden. You don't have permission.");
+      const error = new Error("Acesso negado. Você não tem permissão.");
       (error as any).status = 403;
       (error as any).type = "forbidden";
       throw error;
     }
 
+    // 2. Tratamento para Erro 500
+    if (response.status === 500) {
+      const error = new Error("Erro interno no servidor. Tente novamente mais tarde.");
+      (error as any).status = 500;
+      (error as any).type = "server-error";
+      throw error;
+    }
+
+    // 3. Tratamento para Erro 503
+    if (response.status === 503) {
+      const error = new Error("Serviço temporariamente indisponível (manutenção).");
+      (error as any).status = 503;
+      (error as any).type = "unavailable";
+      throw error;
+    }
+
     if (!response.ok) {
-      // Try to extract error message from response
-      let errorMessage = `Request failed with status ${response.status}`;
+      let errorMessage = `Erro na requisição: ${response.status}`;
       try {
         const data = await response.json();
         errorMessage = data.message || errorMessage;
-      } catch {
-        // If response is not JSON, use default message
-      }
+      } catch { /* ignored */ }
+      
       const error = new Error(errorMessage);
       (error as any).status = response.status;
       (error as any).type = "unknown";
       throw error;
     }
 
-    // Handle empty responses (like logout)
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       return await response.json();
@@ -93,22 +104,17 @@ async function apiCall<T>(
 
     return {} as T;
   } catch (error: any) {
-    // Re-throw known errors
     if (error.status && error.type) {
       throw error;
     }
 
-    // Handle network errors
     if (error.name === "TypeError" || error.message.includes("fetch")) {
-      const networkError = new Error(
-        "Network error. Please check your connection.",
-      );
+      const networkError = new Error("Erro de rede. Verifique sua conexão.");
       (networkError as any).status = 0;
       (networkError as any).type = "network";
       throw networkError;
     }
 
-    // Re-throw other errors
     throw error;
   }
 }
@@ -119,42 +125,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<AuthError>(null);
   const router = useRouter();
 
-  /**
-   * Validates the current session by calling /auth/validate endpoint
-   * Updates user state and error state accordingly
-   * Can be called manually after login or whenever session needs to be refreshed
-   */
   const validateSession = useCallback(async () => {
     try {
       setError(null);
       setIsLoading(true);
 
-      const data = await apiCall<User>(
-        "/auth/validate",
-        {
-          method: "GET",
-        },
-      );
+      const data = await apiCall<User>("/auth/validate", { method: "GET" });
 
       setUser(data);
-      setError(null);
     } catch (err: any) {
-      // Clear user on any error during validation
       setUser(null);
 
-      // Set appropriate error state
+      // 4. Mapeamento do erro para o estado do Contexto
       if (err.type === "unauthorized") {
-        // 401 is expected for unauthenticated users, not really an error state
-        setError(null);
-      } else if (err.type === "network") {
-        // Network errors should be surfaced but shouldn't block the app
-        setError({
-          message: err.message,
-          type: "network",
-        });
+        setError(null); 
       } else {
         setError({
-          message: err.message || "Authentication validation failed",
+          message: err.message,
           type: err.type || "unknown",
         });
       }
@@ -163,59 +150,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Validate session on mount and when component remounts
   useEffect(() => {
     validateSession();
   }, [validateSession]);
 
-  /**
-   * Logs out the user by clearing the cookie and resetting state
-   * Handles errors gracefully and always redirects to login
-   * Uses router.replace to prevent back button issues
-   */
   const logout = useCallback(async () => {
     try {
       setError(null);
       setIsLoading(true);
-
-      // Attempt to call logout endpoint to clear server-side session
-      await apiCall("/auth/logout", {
-        method: "POST",
-      });
+      await apiCall("/auth/logout", { method: "POST" });
     } catch (err: any) {
-      // Log error but don't block logout flow
-      // The cookie might still be cleared client-side by the browser
       console.error("Logout error:", err);
-      
-      // If it's a network error, we still want to clear local state
-      if (err.type !== "network") {
-        setError({
-          message: "Logout request failed, but you have been signed out locally.",
-          type: err.type || "unknown",
-        });
-      }
     } finally {
-      // Always clear user state and redirect, regardless of API call success
       setUser(null);
       setError(null);
       setIsLoading(false);
-      
-      // Use replace to avoid back button issues
       router.replace("/login");
     }
   }, [router]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        error,
-        logout,
-        validateSession,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, error, logout, validateSession }}>
       {children}
     </AuthContext.Provider>
   );
